@@ -1,10 +1,7 @@
 package pc.vadym.helpers;
 
-import pc.vadym.MathAssistantApp;
-import pc.vadym.database.DatabaseConnection;
 import pc.vadym.database.DatabaseHandler;
 
-import java.sql.*;
 import java.util.EmptyStackException;
 import java.util.Stack;
 import java.util.StringTokenizer;
@@ -12,24 +9,24 @@ import java.util.regex.Pattern;
 
 public class MathExpressionHandler {
     private static String TERM_REGEX = "\\d+(\\.\\d+)?|x";
-    private static String ALLOWED_OPERATORS = "*+-\\";
+    private static String ALLOWED_OPERATORS = "*+-/";
     private static String NUMBER_DIGITS = "0123456789";
     private static String SPACES = "\\s+";
 
-    public static boolean isRootOfFullExpression(String fullExpression, double root) throws Exception {
+    public static boolean isRootOfFullExpression(int expressionId, String fullExpression, double root) throws Exception {
         String[] expressionSplits = fullExpression.split("=");
         String rootStr = Double.toString(root);
 
         String leftExpression = expressionSplits[0].replaceAll("x", rootStr);
-        String rightExpression = expressionSplits[0].replaceAll("x", rootStr);
+        String rightExpression = expressionSplits[1].replaceAll("x", rootStr);
 
         double leftResultValue = evalExpressionPart(leftExpression);
         double rightResultValue = evalExpressionPart(rightExpression);
 
-        boolean isRoot = leftResultValue - rightResultValue <= Math.pow(10, -9);
+        boolean isRoot = Math.abs(leftResultValue - rightResultValue) <= Math.pow(10, -9);
 
+        System.out.println("leftResultValue " + leftResultValue + ", rightResultValue " + rightResultValue);
         if (isRoot) {
-            int expressionId = DatabaseHandler.storeFullExpression(fullExpression);
             int rootId = DatabaseHandler.storeRootOfExpression(root);
             DatabaseHandler.connectedInsertedExpressionAndRootByIds(expressionId, rootId);
         }
@@ -90,7 +87,8 @@ public class MathExpressionHandler {
 
 
     private static boolean previousOperatorMoreImportantThanCurrent(char prevOperator, char currentOperator) {
-        if ((currentOperator == '*' || currentOperator == '\\') && (prevOperator == '+' || prevOperator == '-')) {
+        if (((currentOperator == '*' || currentOperator == '/') && (prevOperator == '+' || prevOperator == '-'))
+                || ((prevOperator == '*' && currentOperator == '*') || (prevOperator == '/' && currentOperator == '/'))) {
             return false;
         }
 

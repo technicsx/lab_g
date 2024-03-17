@@ -1,5 +1,6 @@
 package pc.vadym;
 
+import pc.vadym.database.DatabaseConnection;
 import pc.vadym.database.DatabaseHandler;
 import pc.vadym.helpers.MathExpressionHandler;
 
@@ -22,7 +23,6 @@ public class MathAssistantApp {
 
                 int optionPick = scanner.nextInt();
 
-
                 if (optionPick == 1) {
                     System.out.println("Waiting for your expression to be entered:");
                     scanner.nextLine();
@@ -33,11 +33,12 @@ public class MathAssistantApp {
                     MathExpressionHandler.checkValidityOfExpressionTermsOrThrow(expressionInput);
                     MathExpressionHandler.checkCorrectnessOfExpressionOperatorsOrThrow(expressionInput);
                     System.out.println("Given expression is valid.");
+                    int expressionId = DatabaseHandler.storeFullExpression(expressionInput);
 
 
                     System.out.println("Waiting for your x variable to be entered:");
                     double root = scanner.nextDouble();
-                    boolean result = MathExpressionHandler.isRootOfFullExpression(expressionInput, root);
+                    boolean result = MathExpressionHandler.isRootOfFullExpression(expressionId, expressionInput, root);
 
                     if (result) {
                         System.out.println("x = " + root + " IS a root of expression: " + expressionInput);
@@ -75,6 +76,7 @@ public class MathAssistantApp {
                         }
                     }
                 } else if (optionPick == 3) {
+                    DatabaseConnection.getInstance().closeExistingConnection();
                     scanner.close();
                     break;
                 } else {

@@ -6,29 +6,29 @@ import java.util.stream.Collectors;
 
 public class DatabaseHandler {
 
-    public static int storeFullExpression(String fullExpression) throws SQLException {
+    public static int storeFullExpression(String fullExpression) {
         int expressionId = 0;
         try {
             Connection connection = DatabaseConnection.getInstance().getExisitingConnection();
             String insertExpressionQuery = "INSERT INTO Expression (expression) VALUES (?)";
 
-            PreparedStatement statement = connection.prepareStatement(insertExpressionQuery, Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1, fullExpression);
-            statement.executeUpdate();
+            try (PreparedStatement statement = connection.prepareStatement(insertExpressionQuery, Statement.RETURN_GENERATED_KEYS)) {
+                statement.setString(1, fullExpression);
+                statement.executeUpdate();
 
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    expressionId = generatedKeys.getInt(1);
-                } else {
-                    throw new SQLException("Failed to get ID of inserted expression");
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        expressionId = generatedKeys.getInt(1);
+                    } else {
+                        throw new SQLException("Failed to get ID of inserted expression");
+                    }
                 }
             }
-            System.out.println("res: " + expressionId);
-            statement.close();
 
             if (expressionId == 0) {
                 throw new SQLException("Failed to get real ID.");
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -43,20 +43,18 @@ public class DatabaseHandler {
             Connection connection = DatabaseConnection.getInstance().getExisitingConnection();
             String insertExpressionQuery = "INSERT INTO Root (value) VALUES (?)";
 
-            PreparedStatement statement = connection.prepareStatement(insertExpressionQuery, Statement.RETURN_GENERATED_KEYS);
-            statement.setDouble(1, root);
-            statement.executeUpdate();
+            try (PreparedStatement statement = connection.prepareStatement(insertExpressionQuery, Statement.RETURN_GENERATED_KEYS)) {
+                statement.setDouble(1, root);
+                statement.executeUpdate();
 
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    rootId = generatedKeys.getInt(1);
-                } else {
-                    throw new SQLException("Failed to get ID of inserted root");
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        rootId = generatedKeys.getInt(1);
+                    } else {
+                        throw new SQLException("Failed to get ID of inserted root");
+                    }
                 }
             }
-            System.out.println("res: " + rootId);
-            statement.close();
-
             if (rootId == 0) {
                 throw new SQLException("Failed to get real ID.");
             }
@@ -95,17 +93,17 @@ public class DatabaseHandler {
                     .mapToObj(root -> "?")
                     .collect(Collectors.joining(", ")))
                     + ")";
-            PreparedStatement statement = connection.prepareStatement(findQuery);
+            try (PreparedStatement statement = connection.prepareStatement(findQuery)) {
+                for (int i = 0; i < roots.length; ++i) {
+                    statement.setDouble(i + 1, roots[i]);
+                }
 
-            for (int i = 0; i < roots.length; i++) {
-                statement.setDouble(i + 1, roots[i]);
-            }
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    int expressionId = resultSet.getInt("id");
-                    String expression = resultSet.getString("expression");
-                    System.out.println("Expression ID: " + expressionId + ", Expression: " + expression + ". Has one of roots: " + Arrays.toString(roots));
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        int expressionId = resultSet.getInt("id");
+                        String expression = resultSet.getString("expression");
+                        System.out.println("Expression ID: " + expressionId + ", Expression: " + expression + ". Has one of roots: " + Arrays.toString(roots));
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -123,12 +121,13 @@ public class DatabaseHandler {
                     "      GROUP BY expression_id " +
                     "      HAVING COUNT(root_id) = 1) AS er ON e.id = er.expression_id";
 
-            PreparedStatement statement = connection.prepareStatement(query);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    int expressionId = resultSet.getInt("id");
-                    String expression = resultSet.getString("expression");
-                    System.out.println("Expression ID: " + expressionId + ", Expression: " + expression + ". With one root.");
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        int expressionId = resultSet.getInt("id");
+                        String expression = resultSet.getString("expression");
+                        System.out.println("Expression ID: " + expressionId + ", Expression: " + expression + ". With one root.");
+                    }
                 }
             }
         } catch (SQLException e) {
