@@ -9,7 +9,6 @@ import java.util.Properties;
 
 public class DatabaseConnection {
     private Connection connection;
-
     private static DatabaseConnection instance;
 
     public DatabaseConnection() {

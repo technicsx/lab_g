@@ -7,7 +7,6 @@ import java.util.Properties;
 public class PropsLoader {
     private static PropsLoader instance;
     public Properties props;
-
     private PropsLoader() {
         Properties configuration = new Properties();
         InputStream inputStream = PropsLoader.class

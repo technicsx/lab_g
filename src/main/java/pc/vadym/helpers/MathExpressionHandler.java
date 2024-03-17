@@ -1,6 +1,9 @@
 package pc.vadym.helpers;
 
 import pc.vadym.database.DatabaseHandler;
+import pc.vadym.exceptions.BracketsException;
+import pc.vadym.exceptions.OperatorsException;
+import pc.vadym.exceptions.TermsException;
 
 import java.util.EmptyStackException;
 import java.util.Stack;
@@ -67,7 +70,6 @@ public class MathExpressionHandler {
                     double leftOperand = numbers.pop();
                     char operatorInBetween = operatorsWithBraces.pop();
                     numbers.push(performOperation(leftOperand, rightOperand, operatorInBetween));
-                    operatorsWithBraces.push(currentChar);
                 }
                 operatorsWithBraces.push(currentChar);
             }
@@ -110,27 +112,27 @@ public class MathExpressionHandler {
         };
     }
 
-    public static void checkValidityOfExpressionTermsOrThrow(String expression) throws Exception {
+    public static void checkValidityOfExpressionTermsOrThrow(String expression) throws TermsException {
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-/*=)(");
         Pattern termPattern = Pattern.compile(TERM_REGEX);
 
         if (expression.indexOf('x') == -1) {
-            throw new Exception("No unknown variable x found");
+            throw new TermsException("No unknown variable x found");
         }
 
         if (expression.indexOf('=') == -1) {
-            throw new Exception("It is not a proper equation, = needed");
+            throw new TermsException("It is not a proper equation, = needed");
         }
 
         while (tokenizer.hasMoreTokens()) {
             String nextToken = tokenizer.nextToken();
             if (!termPattern.matcher(nextToken).matches()) {
-                throw new Exception("Incorrect term found: " + nextToken);
+                throw new TermsException("Incorrect term found: " + nextToken);
             }
         }
     }
 
-    public static void checkCorrectnessOfExpressionBracketsOrThrow(String expression) throws Exception {
+    public static void checkCorrectnessOfExpressionBracketsOrThrow(String expression) throws BracketsException {
         Stack<Character> brackets = new Stack<>();
 
         for (int i = 0; i < expression.length(); ++i) {
@@ -145,31 +147,33 @@ public class MathExpressionHandler {
                 try {
                     poppedBracket = brackets.pop();
                 } catch (EmptyStackException e) {
-                    throw new Exception("Incorrect brackets, stack was empty on checking of opening bracket");
+                    throw new BracketsException("Incorrect brackets, stack was empty on checking of opening bracket");
                 }
                 if (poppedBracket != '(') {
-                    throw new Exception("Incorrect brackets, popped bracket was not an opening one");
+                    throw new BracketsException("Incorrect brackets, popped bracket was not an opening one");
                 }
             }
         }
 
         if (!brackets.isEmpty()) {
-            throw new Exception("Incorrect brackets");
+            throw new BracketsException("Incorrect brackets");
         }
     }
 
-    public static void checkCorrectnessOfExpressionOperatorsOrThrow(String expression) throws Exception {
+    public static void checkCorrectnessOfExpressionOperatorsOrThrow(String expression) throws OperatorsException {
         for (int i = 0; i < expression.length() - 1; ++i) {
             char currentOperator = expression.charAt(i);
 
             if (ALLOWED_OPERATORS.indexOf((expression.charAt(i))) != -1) {
                 if (currentOperator != '-' && i == 0) {
-                    throw new Exception("Incorrect operators usage on start of expression, only - is allowed");
+                    throw new OperatorsException("Incorrect operators usage on start of expression, only - is allowed");
                 }
 
                 char nextChar = expression.charAt(i + 1);
-                if (ALLOWED_OPERATORS.indexOf(nextChar) != -1 && nextChar != '-') {
-                    throw new Exception("Incorrect operators usage, more than one operator was found next to each other: " + currentOperator + nextChar);
+                if ((ALLOWED_OPERATORS.indexOf(currentOperator) != -1 || currentOperator == ')' || currentOperator == '(')
+                        && (ALLOWED_OPERATORS.indexOf(nextChar) != -1 || nextChar == ')' || nextChar == '(')
+                        && nextChar != '-' && nextChar != '(') {
+                    throw new OperatorsException("Incorrect operators usage, more than one operator was found next to each other: " + currentOperator + nextChar);
                 }
             }
         }

@@ -3,8 +3,6 @@ package pc.vadym;
 import pc.vadym.database.DatabaseConnection;
 import pc.vadym.database.DatabaseHandler;
 import pc.vadym.helpers.MathExpressionHandler;
-
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Scanner;
 
