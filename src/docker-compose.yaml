@@ -7,4 +7,4 @@ services:
       - "5432:5432"
     volumes:
       - ./init-scripts:/docker-entrypoint-initdb.d
-    env_file: local-db.env
+    env_file: local-db.env.example
